@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>R.E.P.O. Бинго — Онлайн</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0e0e1e;
+      color: #eee;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #ff3e3e;
+      text-shadow: 0 0 10px rgba(255, 62, 62, 0.5);
+    }
+    .theme-selector {
+      margin: 20px 0;
+      font-size: 1.2em;
+    }
+    .theme-selector select {
+      background: #222;
+      color: #fff;
+      padding: 8px;
+      border: 1px solid #555;
+      border-radius: 5px;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 900px;
+      box-shadow: 0 0 15px rgba(100, 100, 255, 0.3);
+    }
+    td {
+      border: 1px solid #444;
+      padding: 12px;
+      background: #1a1a2a;
+      color: #ddd;
+      font-size: 0.95em;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    td:hover {
+      background: #333;
+      color: #fff;
+    }
+    td.checked {
+      background: #500;
+      color: #ff9;
+      font-weight: bold;
+      position: relative;
+    }
+    td.checked::after {
+      content: "✅";
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 1.2em;
+    }
+    button {
+      margin: 15px;
+      padding: 10px 20px;
+      font-size: 1.1em;
+      background: #a00;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #c00;
+    }
+    footer {
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <h1>👹 БИНГО на ДР 10.08</h1>
+  <p>Кликай по событиям, когда они происходят в игре. Восхваляй именинницу. (Славься, Лина!🛐)</p>
+  <div class="theme-selector">
+    <label for="theme">Выбери режим: </label>
+    <select id="theme">
+      <option value="nightmare">🤖 R.E.P.O.</option>
+      <option value="lab">🥂 ТОСТ! ПЬЕМ!</option>
+      <option value="warehouse">🏔️ PEAK</option>
+    </select>
+  </div>
+  <table id="bingo-table">
+    <!-- Заполняется скриптом -->
+  </table>
+  <button onclick="resetBoard()">Сбросить доску</button>
+  <footer>
+    БИНГО — фан-игра для кооператива от mc Purry.<br>
+    Неофициальный контент. Используется в развлекательных целях.
+    Создан специально для Nox 💌
+  </footer>
+  <script>
+    // === Звуки (можно заменить на файлы) ===
+    const audioBingo = new Audio();
+    const audioClick = new Audio();
+    audioBingo.volume = 0.8;
+    audioClick.volume = 0.3;
+
+    // === Данные игры ===
+    const themes = {
+      nightmare: [
+        "А я думала она умерла, показалось",
+        "Использовать дрона для перемещения предмета с высоты",
+        "Поиграйте в прятки. Все ищут именинницу!",
+        "Стать свидетелем смерти. Твоему другу больше не нужен адвокат...",
+        "Смыть друга в унитаз во имя именинницы",
+        "Активировать фазу луны и встретить усиленных врагов, ауф",
+        "Команда круто сидит под столом/стулом, за-то все вместе",
+        "Она упала? Дно все еще не пробито...",
+        "Пройти lvl без смертей",
+        "Покатать именинницу в тележке (желательно при этом говорить какая она замечательная)",
+        "ДА БЛ*!.. (кажется вы слышали как кто-то уронил предмет)",
+        "Собрать достаточно денег для покупки подарка имениннице (накопить 50 тыщ, вдруг она хочет купить кувалду?)",
+        "Единственный выживший спасает игру",
+        "Помешать монстрам украсть/сломать подарки именинницы из тележки",
+        "Групповое насилие над мобом",
+        "Собрать в тележке лут на 20 тыщ",
+        "Принять участие в битве лохов (проиграть)",
+        "Игровой войс... убил. Она слишкоим много болтала",
+        "Потратить все деньги в магазине, чтобы на счету осталось ровно 0",
+        "Воскресить ленивого друга-спектатора с помощью экстрактора",
+        "Чокнуться с именинницей и выпить (найти кубок/шампанское и показать имениннице)",
+        "Закастомить себя (и сказать комплемент именнинце)",
+        "А! ОЙ! Ты тоже тут? (Уехать без живого)",
+        "Заставить врагов сражаться друг с другом — чтобы именинница отдыхала",
+        "Закрыли 5 lvl"
+      ],
+      lab: [
+        "Поднять тост за победу команды",
+        "Рассказать смешную историю в пьяном ключе",
+        "Выпить тост за именинницу",
+        "Сыграть в «угадай коктейль»",
+        "Спеть песенку вместе с Линой",
+        "Сделать «танец победы» в честь именинницы",
+        "Угадай героя по описанию",
+        "Произнеси тост от лица персонажа",
+        "Сыграть в «Ты всегда / Ты никогда»",
+        "Нарисовать Лину как животное",
+        "Произнести тост, рифмуя с «БИНГО»",
+        "Рассказать анекдот про именинницу",
+        "Сделать фото/скрин с Линой",
+        "Выпить, если кто-то упал в лаву",
+        "Кто последний смеялся — тот пьёт!",
+        "Обнять именинницу и сказать комплимент"
+      ],
+      warehouse: [
+  "Вместе дойти до костра 🔥", "Блиц сьедобное/несьедобное!Называйте еду и вещи по очереди, при ошибке - пьете, долго думаешь - пьешь", "Подари имениннице BIG LOLLIPOP🌚", "Заскучали? Время загадок (Лера, ебашь!)", "Ананас! Ой, кокос! (накормите именинницу)",
+  "Фу! Что это?", "Спойте походную песенку пока идете", "Получить панацею", "Прыжок веры (Она думала, что перепрыгнет...)", "На ниточке! Успешно воспользуйтесь веревкой",
+  "Ты сказал, что шаришь в этой теме (сьесть несьедобную штучку)", "Сядь мне на лицо (подкинуть друга, а ты что подумал?)", "Духи предков говорят мне... (Ты один дошел до костра)", "Зеленая поляна. Сделайте остановку на поход в кустики", "Играем в ассоциации пока лезем: один называет слово — следующий говорит первую пришедшую ассоциацию",
+  "Сыграть песенку на трубе для именинницы", "Эмоушинал тайм, надо побаловаться", "БУМ! Ой, кажется не стоило на это наступать", "Зачилльтесь у костра и повспоминайтесь истории из походов, прогулок по дикой природе и т.д.", "Устали? Время слушать батарейку🌝",
+  "Царь горы. Скажите тост с горы 🗿", 
+  "Примерно 5 минут подавайте руку имениннице со словами \"Миледи, вот моя рука, я к вашим услугам и т.д.\"",
+  "I need healing! Используйте аптечку", "Устроить фаер шоу", "Нашли лут мечты (Волшебный боб)"
+]
+    };
+    const boardSizes = {
+      nightmare: 5,
+      lab: 4,
+      warehouse: 5
+    };
+    const table = document.getElementById("bingo-table");
+    const themeSelect = document.getElementById("theme");
+    let bingoOverlay = null;
+
+    // === Модальное окно BINGO ===
+    function createBingoOverlay() {
+      if (document.getElementById("bingo-overlay")) return document.getElementById("bingo-overlay");
+      const overlay = document.createElement("div");
+      overlay.id = "bingo-overlay";
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        flex-direction: column;
+        font-family: 'Impact', sans-serif;
+        color: yellow;
+        text-shadow: 0 0 20px red, 0 0 40px gold;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.5s;
+      `;
+      const text = document.createElement("div");
+      text.innerText = "BINGO!";
+      text.style.cssText = `
+        font-size: 120px;
+        animation: pulse 1s infinite, colorChange 2s infinite;
+      `;
+      const subtitle = document.createElement("div");
+      subtitle.innerText = "СЛАВА ИМЕНИННИЦЕ! 🎂";
+      subtitle.style.cssText = `
+        font-size: 30px;
+        margin-top: 10px;
+        animation: fadeInOut 2s infinite;
+      `;
+      overlay.appendChild(text);
+      overlay.appendChild(subtitle);
+      document.body.appendChild(overlay);
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+        @keyframes colorChange {
+          0% { color: yellow; text-shadow: 0 0 20px red, 0 0 40px gold; }
+          50% { color: #ff0; text-shadow: 0 0 20px #f06, 0 0 40px #0f0; }
+          100% { color: gold; text-shadow: 0 0 20px yellow, 0 0 40px red; }
+        }
+        @keyframes fadeInOut {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+      return overlay;
+    }
+
+    function showBingoAnimation() {
+      if (!bingoOverlay) bingoOverlay = createBingoOverlay();
+      bingoOverlay.style.opacity = 1;
+      audioBingo.currentTime = 0;
+      audioBingo.play().catch(e => console.log("Звук BINGO не проигран", e));
+      setTimeout(() => {
+        bingoOverlay.style.opacity = 0;
+        setTimeout(() => {
+          if (bingoOverlay.parentElement) document.body.removeChild(bingoOverlay);
+        }, 500);
+      }, 5000);
+    }
+
+    // === Функции ===
+    function hasAchievedBingo() {
+      const theme = themeSelect.value;
+      return localStorage.getItem("bingoAchieved_" + theme) === "true";
+    }
+
+    function setBingoAchieved(value) {
+      const theme = themeSelect.value;
+      localStorage.setItem("bingoAchieved_" + theme, value);
+    }
+
+    function createBoard() {
+      table.innerHTML = "";
+      const theme = themeSelect.value;
+      const words = themes[theme];
+      const size = boardSizes[theme];
+      let index = 0;
+      for (let i = 0; i < size; i++) {
+        const row = table.insertRow();
+        for (let j = 0; j < size; j++) {
+          const cell = row.insertCell();
+          cell.textContent = words[index] || "—";
+          cell.onclick = function () {
+            audioClick.currentTime = 0;
+            audioClick.play().catch(() => {});
+            this.classList.toggle("checked");
+            saveState();
+            checkBingo(); // Проверяем после каждого клика
+          };
+          index++;
+        }
+      }
+      loadState();
+      checkBingo(); // Проверяем при загрузке
+    }
+
+    function saveState() {
+      const theme = themeSelect.value;
+      const size = boardSizes[theme];
+      const totalCells = size * size;
+      const cells = document.querySelectorAll("#bingo-table td");
+      const state = [];
+      for (let i = 0; i < totalCells; i++) {
+        state.push(cells[i]?.classList.contains("checked") || false);
+      }
+      localStorage.setItem("bingoState_" + theme, JSON.stringify(state));
+    }
+
+    function loadState() {
+      const theme = themeSelect.value;
+      const saved = localStorage.getItem("bingoState_" + theme);
+      if (saved) {
+        const state = JSON.parse(saved);
+        const cells = document.querySelectorAll("#bingo-table td");
+        cells.forEach((cell, i) => {
+          if (state[i]) cell.classList.add("checked");
+        });
+      }
+    }
+
+    function checkBingo() {
+      const theme = themeSelect.value;
+      const size = boardSizes[theme];
+      const cells = document.querySelectorAll("#bingo-table td");
+      if (cells.length < size * size) return;
+
+      const board = [];
+      let index = 0;
+      for (let i = 0; i < size; i++) {
+        const row = [];
+        for (let j = 0; j < size; j++) {
+          row.push(cells[index]?.classList.contains("checked") || false);
+          index++;
+        }
+        board.push(row);
+      }
+
+      let isBingo = false;
+
+      // Проверка строк
+      for (let i = 0; i < size; i++) {
+        if (board[i].every(cell => cell)) {
+          isBingo = true;
+          break;
+        }
+      }
+
+      // Проверка столбцов
+      if (!isBingo) {
+        for (let j = 0; j < size; j++) {
+          let colComplete = true;
+          for (let i = 0; i < size; i++) {
+            if (!board[i][j]) {
+              colComplete = false;
+              break;
+            }
+          }
+          if (colComplete) {
+            isBingo = true;
+            break;
+          }
+        }
+      }
+
+      // Главная диагональ
+      if (!isBingo && board.every((row, i) => row[i])) isBingo = true;
+
+      // Побочная диагональ
+      if (!isBingo && board.every((row, i) => row[size - 1 - i])) isBingo = true;
+
+      // Если BINGO и ещё не было показано уведомление
+      if (isBingo && !hasAchievedBingo()) {
+        setBingoAchieved(true); // Устанавливаем флаг
+        showBingoAnimation();
+        setTimeout(() => {
+          alert(`🎉 BINGO! Слава имениннице! 🎂`);
+        }, 150);
+      }
+    }
+
+    function resetBoard() {
+      if (confirm("Сбросить все отметки?")) {
+        const theme = themeSelect.value;
+        localStorage.removeItem("bingoState_" + theme);
+        localStorage.removeItem("bingoAchieved_" + theme); // Сбрасываем флаг
+        const cells = document.querySelectorAll("#bingo-table td");
+        cells.forEach(cell => cell.classList.remove("checked"));
+        checkBingo(); // Перепроверяем
+      }
+    }
+
+    // === Инициализация ===
+    document.addEventListener("DOMContentLoaded", () => {
+      themeSelect.onchange = createBoard;
+      createBoard();
+    });
+  </script>
+</body>
+</html>
